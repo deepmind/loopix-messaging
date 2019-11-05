@@ -18,13 +18,13 @@
 package client
 
 import (
-	"anonymous-messaging/clientCore"
-	"anonymous-messaging/config"
-	"anonymous-messaging/helpers"
-	"anonymous-messaging/logging"
-	"anonymous-messaging/networker"
+	"loopix-messaging/clientCore"
+	"loopix-messaging/config"
+	"loopix-messaging/helpers"
+	"loopix-messaging/logging"
+	"loopix-messaging/networker"
 
-	"github.com/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	"crypto/elliptic"
 	"crypto/rand"
@@ -38,6 +38,10 @@ var (
 	logLocal                = logging.PackageLogger()
 	loopCoverTrafficEnabled = true
 	dropCoverTrafficEnabled = true
+	assignFlag              = []byte{0xA2}
+	commFlag                = []byte{0xc6}
+	tokenFlag               = []byte{0xa9}
+	pullFlag                = []byte{0xff}
 )
 
 const (
@@ -48,11 +52,7 @@ const (
 	dropRate             = 0.1
 	// the rate at which clients are querying the provider for received packets. fetchRate value is the
 	// parameter of an exponential distribution, and is the reciprocal of the expected value of the exp. distribution
-	fetchRate  = 0.01
-	assignFlag = "\xA2"
-	commFlag   = "\xc6"
-	tokenFlag  = "xa9"
-	pullFlag   = "\xff"
+	fetchRate = 0.01
 )
 
 type Client interface {
@@ -225,8 +225,8 @@ func (c *client) handleConnection(conn net.Conn) {
 		logLocal.WithError(err).Error("Error in unmarshal incoming packet")
 	}
 
-	switch packet.Flag {
-	case tokenFlag:
+	switch string(packet.Flag) {
+	case string(tokenFlag):
 		c.registerToken(packet.Data)
 		go func() {
 			err := c.controlOutQueue()
@@ -247,14 +247,14 @@ func (c *client) handleConnection(conn net.Conn) {
 			c.controlMessagingFetching()
 		}()
 
-	case commFlag:
+	case string(commFlag):
 		_, err := c.processPacket(packet.Data)
 		if err != nil {
 			logLocal.WithError(err).Error("Error in processing received packet")
 		}
 		logLocal.Info("Received new message")
 	default:
-		logLocal.Info("Packet flag not recognised. Packet dropped.")
+		logLocal.Infof("Packet flag %x not recognised. Packet dropped.", packet.Flag[0])
 	}
 }
 

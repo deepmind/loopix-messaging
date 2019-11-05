@@ -15,13 +15,13 @@
 package server
 
 import (
-	"anonymous-messaging/config"
-	"anonymous-messaging/helpers"
-	"anonymous-messaging/networker"
-	"anonymous-messaging/node"
-	"anonymous-messaging/sphinx"
+	"loopix-messaging/config"
+	"loopix-messaging/helpers"
+	"loopix-messaging/networker"
+	"loopix-messaging/node"
+	"loopix-messaging/sphinx"
 
-	"github.com/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	"bytes"
 	"errors"
@@ -31,11 +31,11 @@ import (
 	"os"
 )
 
-const (
-	assigneFlag = "\xa2"
-	commFlag    = "\xc6"
-	tokenFlag   = "xa9"
-	pullFlag    = "\xff"
+var (
+	assignFlag = []byte{0xa2}
+	commFlag   = []byte{0xc6}
+	tokenFlag  = []byte{0xa9}
+	pullFlag   = []byte{0xff}
 )
 
 type ProviderIt interface {
@@ -200,18 +200,18 @@ func (p *ProviderServer) handleConnection(conn net.Conn, errs chan<- error) {
 		errs <- err
 	}
 
-	switch packet.Flag {
-	case assigneFlag:
+	switch string(packet.Flag) {
+	case string(assignFlag):
 		err = p.handleAssignRequest(packet.Data)
 		if err != nil {
 			errs <- err
 		}
-	case commFlag:
+	case string(commFlag):
 		err = p.receivedPacket(packet.Data)
 		if err != nil {
 			errs <- err
 		}
-	case pullFlag:
+	case string(pullFlag):
 		err = p.handlePullRequest(packet.Data)
 		if err != nil {
 			errs <- err
